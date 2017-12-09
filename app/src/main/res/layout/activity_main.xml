@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/activity_main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin"
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:orientation="vertical"
+        android:background="@drawable/wali1"
+        tools:context="com.cycloneboy.udpdemo.MainActivity">
+
+    <TextView
+            android:id="@+id/tvIpInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="本机IP地址"/>
+
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+        <EditText
+                android:id="@+id/editTextIP"
+                android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:text="192.168.1.101"
+                android:hint="请输IP地址"/>
+        <EditText
+                android:id="@+id/editTextPort"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@id/editTextIP"
+                android:ems="10"
+                android:text="6000"
+                android:hint="端口号"/>
+
+        <Button
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/btn_udpConn"
+                android:text="连接" />
+        <Button
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/btn_udpClose"
+                android:text="关闭" />
+
+    </LinearLayout>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="20dp"
+            android:text="消息列表："
+            android:id="@+id/txt_Info"/>
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="消息："/>
+            <EditText
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/edit_Send"
+                    android:hint="请输入待发送的消息"/>
+            <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btn_Send"
+                    android:text="发送"/>
+        </LinearLayout>
+
+
+    <TextView
+            android:id="@+id/positionView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/strGPS"/>
+
+    <RelativeLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        <Button
+                android:id="@+id/btnForward"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:text="@string/strForWard"/>
+        <Button
+                android:id="@+id/btnTurnLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/btnStop"
+                android:layout_alignBottom="@+id/btnStop"
+                android:layout_toLeftOf="@+id/btnStop"
+                android:text="@string/strTurnLeft" />
+
+        <Button
+                android:id="@+id/btnTurnRight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/btnStop"
+                android:layout_alignBottom="@+id/btnStop"
+                android:layout_toRightOf="@+id/btnStop"
+                android:text="@string/strTurnRight" />
+
+        <Button
+                android:id="@+id/btnStop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignLeft="@+id/btnForward"
+                android:layout_below="@+id/btnForward"
+                android:text="@string/strStop"/>
+
+        <Button
+                android:id="@+id/btnBackward"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignLeft="@+id/btnStop"
+                android:layout_below="@+id/btnStop"
+                android:text="@string/strBackWard"/>
+
+    </RelativeLayout>
+
+
+
+</LinearLayout>

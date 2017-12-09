@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">全向移动小车</string>
+    <string name="action_settings">设置</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="strInfo">请输入IP地址和端口</string>
+    <string name="strBackWard">后退</string>
+    <string name="strTurnLeft">左转</string>
+    <string name="strStop">停止</string>
+    <string name="strForWard">前进</string>
+    <string name="strTurnRight">右转</string>
+    <string name="strServod">转动摄像头</string>
+
+    <string name="strGPS">GPS坐标：</string>
+    <string name="menuDesignAuthor">Design by CycloneBoy</string>
+</resources>
