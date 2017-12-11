@@ -12,4 +12,10 @@
 
     <string name="strGPS">GPS坐标：</string>
     <string name="menuDesignAuthor">Design by CycloneBoy</string>
+
+    <!-- 添加 顺时针、逆时针功能按钮 2017-12-11 -->
+    <string name="strTurnClockwise">顺时针</string>
+    <string name="strTurnAntiClockwise">逆时针</string>
+    <string name="strCalibrationDirection">校准</string>
+    <string name="strOtherCmd">其他</string>
 </resources>

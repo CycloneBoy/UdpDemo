@@ -29,7 +29,7 @@
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:ems="10"
-                android:text="192.168.1.101"
+                android:text="192.168.31.199"
                 android:hint="请输IP地址"/>
         <EditText
                 android:id="@+id/editTextPort"
@@ -37,7 +37,7 @@
                 android:layout_height="wrap_content"
                 android:layout_toRightOf="@id/editTextIP"
                 android:ems="10"
-                android:text="6000"
+                android:text="5000"
                 android:hint="端口号"/>
 
         <Button
@@ -91,12 +91,30 @@
             android:layout_height="match_parent">
 
         <Button
+                android:id="@+id/btnTurnClockwise"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/btnForward"
+                android:layout_toLeftOf="@+id/btnForward"
+                android:text="@string/strTurnClockwise"/>
+
+        <Button
                 android:id="@+id/btnForward"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerHorizontal="true"
                 android:layout_centerVertical="true"
                 android:text="@string/strForWard"/>
+
+        <Button
+                android:id="@+id/btnTurnAntiClockwise"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/btnForward"
+                android:layout_toRightOf="@+id/btnForward"
+                android:text="@string/strTurnAntiClockwise"/>
+
+
         <Button
                 android:id="@+id/btnTurnLeft"
                 android:layout_width="wrap_content"
@@ -130,6 +148,22 @@
                 android:layout_alignLeft="@+id/btnStop"
                 android:layout_below="@+id/btnStop"
                 android:text="@string/strBackWard"/>
+
+        <Button
+                android:id="@+id/btnCalibrationDirection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/btnBackward"
+                android:layout_toLeftOf="@+id/btnBackward"
+                android:text="@string/strCalibrationDirection"/>
+
+        <Button
+                android:id="@+id/btnOtherCmd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/btnBackward"
+                android:layout_toRightOf="@+id/btnForward"
+                android:text="@string/strOtherCmd"/>
 
     </RelativeLayout>
 

@@ -1,16 +1,22 @@
 package com.cycloneboy.udpdemo;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,6 +26,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.cycloneboy.udpdemo.utils.LocationUtils;
 
 import java.lang.ref.WeakReference;
 
@@ -29,11 +36,13 @@ import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
-    private  static  String Tag = "UDP";
+    private  static  String UdpTag = "UDP";
 
     TextView tvIpInfo,txt_Info;
     Button  btn_Send,btn_UdpConn,btn_UdpClose;
     Button  btnForward,btnTurnLeft,btnTurnRight,btnStop,btnBackward;
+    Button  btnTurnClockwise,btnTurnAntiClockwise,btnCalibrationDirection,btnOtherCmd; //旋转按钮
+
     EditText edit_Send,editTextIP,editTextPort;
     private UDPClient client = null;
     public static Context context;
@@ -47,6 +56,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView postionView;
     private LocationManager locationManager;
     private String locationProvider;
+
+    private boolean flag; //GPS
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +75,8 @@ public class MainActivity extends AppCompatActivity {
         bindReceiver();     //注册broadcastReceiver接收器
         iniWidget();        //初始化控件状态
         initLocation();     //初始化定位GPS相关
+
+        SetControlButtonEnableState(false);//设置控制按钮状态
     }
 
 
@@ -83,6 +96,12 @@ public class MainActivity extends AppCompatActivity {
         btnStop= (Button)findViewById(R.id.btnStop);
         btnBackward= (Button)findViewById(R.id.btnBackward);
 
+        // 2017-12-11 09:00 添加旋转功能按钮
+        btnTurnClockwise = (Button)findViewById(R.id.btnTurnClockwise);
+        btnTurnAntiClockwise = (Button)findViewById(R.id.btnTurnAntiClockwise);
+        btnCalibrationDirection = (Button)findViewById(R.id.btnCalibrationDirection);
+        btnOtherCmd  = (Button)findViewById(R.id.btnOtherCmd);
+
     }
 
     private void bindListening(){
@@ -96,6 +115,11 @@ public class MainActivity extends AppCompatActivity {
         btnStop.setOnClickListener(myBtnClick);
         btnBackward.setOnClickListener(myBtnClick);
 
+        // 2017-12-11  09:00 添加旋转功能按钮
+        btnTurnClockwise.setOnClickListener(myBtnClick);
+        btnTurnAntiClockwise.setOnClickListener(myBtnClick);
+        btnCalibrationDirection.setOnClickListener(myBtnClick);
+        btnOtherCmd.setOnClickListener(myBtnClick);
     }
 
     private void bindReceiver(){
@@ -124,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
             //如果是Network
             locationProvider = LocationManager.NETWORK_PROVIDER;
         }else{
-            Toast.makeText(this, "没有可用的位置提供器", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "没有可用的位置提供器:请检查网络或GPS是否打开", Toast.LENGTH_SHORT).show();
             return ;
         }
         //获取Location
@@ -238,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
         WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         int ipAddress = wifiInfo.getIpAddress();
-        Log.i(Tag, "int ip "+ipAddress);
+        Log.i(UdpTag, "int ip "+ipAddress);
 
         if (ipAddress == 0) return null;
         return ((ipAddress & 0xff) + "." + (ipAddress >> 8 & 0xff) + "."
@@ -295,6 +319,7 @@ public class MainActivity extends AppCompatActivity {
                     btn_Send.setEnabled(true);
                     editTextIP.setEnabled(false);
                     editTextPort.setEnabled(false);
+                    SetControlButtonEnableState(true);//设置控制按钮状态
                     break;
                 case R.id.btn_udpClose:
                     System.out.println(" btn_udpClose click once");
@@ -304,6 +329,8 @@ public class MainActivity extends AppCompatActivity {
                     btn_Send.setEnabled(false);
                     editTextIP.setEnabled(true);
                     editTextPort.setEnabled(true);
+
+                    SetControlButtonEnableState(false);//设置控制按钮状态
                     break;
                 case R.id.btn_Send:
                     System.out.println(" btn_Send click once");
@@ -377,6 +404,35 @@ public class MainActivity extends AppCompatActivity {
                     thread.start();
                     break;
                 }
+                // 2017-12-11  09:00 添加旋转功能按钮
+                case R.id.btnTurnClockwise:{
+                    Log.i(UdpTag,"btnTurnClockwise click once");
+                    sendCmdBuf[0] = 1;
+                    thread = sendCmd(ConstParam.SEND_CMD_TURN_CLOCKWISE,sendCmdBuf,1);
+                    thread.start();
+                    break;
+                }
+                case R.id.btnTurnAntiClockwise:{
+                    sendCmdBuf[0] = 1;
+                    thread = sendCmd(ConstParam.SEND_CMD_TURN_ANTICLOCKWISE,sendCmdBuf,1);
+                    thread.start();
+                    break;
+                }
+                case R.id.btnCalibrationDirection:{
+                    sendCmdBuf[0] = 1;
+                    thread = sendCmd(ConstParam.SEND_CMD_CALIBRATION_DIRECTION,sendCmdBuf,1);
+                    thread.start();
+                    break;
+                }
+                case R.id.btnOtherCmd:{
+
+                    getGPSLocation(); // 获取GPS坐标
+                    sendCmdBuf[0] = 1;
+                    thread = sendCmd(ConstParam.SEND_CMD_OTHER_CMD,sendCmdBuf,1);
+                    thread.start();
+                    break;
+                }
+
                 default:
                     break;
             }
@@ -419,5 +475,106 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    // 控制按钮设置响应开关
+    public void SetControlButtonEnableState(boolean enableFlag){
+        boolean setFlag = enableFlag;
+
+        btnForward.setEnabled(setFlag);
+        btnTurnLeft.setEnabled(setFlag);
+        btnTurnRight.setEnabled(setFlag);
+        btnStop.setEnabled(setFlag);
+        btnBackward.setEnabled(setFlag);
+
+        btnTurnClockwise.setEnabled(setFlag);
+        btnTurnAntiClockwise.setEnabled(setFlag);
+        btnCalibrationDirection.setEnabled(setFlag);
+        btnOtherCmd.setEnabled(setFlag);  //旋转按钮
+    }
+
+    private void initPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            //检查权限
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                    || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                //请求权限
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            } else {
+                flag = true;
+            }
+        } else {
+            flag = true;
+        }
+    }
+
+    /**
+     * 权限的结果回调函数
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1) {
+            flag = grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED;
+        }
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        initPermission();//针对6.0以上版本做权限适配
+    }
+
+    /**
+     * 通过GPS获取定位信息
+     */
+    public void getGPSLocation() {
+        Location gps = LocationUtils.getGPSLocation(this);
+        if (gps == null) {
+            //设置定位监听，因为GPS定位，第一次进来可能获取不到，通过设置监听，可以在有效的时间范围内获取定位信息
+            LocationUtils.addLocationListener(context, LocationManager.GPS_PROVIDER, new LocationUtils.ILocationListener() {
+                @Override
+                public void onSuccessLocation(Location location) {
+                    if (location != null) {
+                        showLocation(location); // 显示GPS
+                        Toast.makeText(MainActivity.this, "gps onSuccessLocation location:  lat==" + location.getLatitude() + "     lng==" + location.getLongitude(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "gps location is null", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        } else {
+            Toast.makeText(this, "gps location: lat==" + gps.getLatitude() + "  lng==" + gps.getLongitude(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * 通过网络等获取定位信息
+     */
+    private void getNetworkLocation() {
+        Location net = LocationUtils.getNetWorkLocation(this);
+        if (net == null) {
+            Toast.makeText(this, "net location is null", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "network location: lat==" + net.getLatitude() + "  lng==" + net.getLongitude(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * 采用最好的方式获取定位信息
+     */
+    private void getBestLocation() {
+        Criteria c = new Criteria();//Criteria类是设置定位的标准信息（系统会根据你的要求，匹配最适合你的定位供应商），一个定位的辅助信息的类
+        c.setPowerRequirement(Criteria.POWER_LOW);//设置低耗电
+        c.setAltitudeRequired(true);//设置需要海拔
+        c.setBearingAccuracy(Criteria.ACCURACY_COARSE);//设置COARSE精度标准
+        c.setAccuracy(Criteria.ACCURACY_LOW);//设置低精度
+        //... Criteria 还有其他属性，就不一一介绍了
+        Location best = LocationUtils.getBestLocation(this, c);
+        if (best == null) {
+            Toast.makeText(this, " best location is null", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "best location: lat==" + best.getLatitude() + " lng==" + best.getLongitude(), Toast.LENGTH_SHORT).show();
+        }
+    }
 
 }

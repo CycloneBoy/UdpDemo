@@ -12,8 +12,8 @@ import java.net.*;
  */
 public class UDPClient implements Runnable{
     final static int CLIENT_PORT = 6000; // 安卓本机  端口
-    final static String HOST_IP = "192.168.1.101";
-    final static int HOST_PORT = 6000;
+    final static String HOST_IP = "192.168.31.199";
+    final static int HOST_PORT = 5000;
     private static DatagramSocket socket = null;
     private static DatagramPacket packetSend,packetRcv;
     private boolean udpLife = true; //udp生命线程
