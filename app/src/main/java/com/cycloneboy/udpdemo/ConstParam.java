@@ -21,6 +21,7 @@ public  class ConstParam {
     public static final byte SEND_CMD_CALIBRATION_DIRECTION = 7;       //校准方向
     public static final byte SEND_CMD_OTHER_CMD = 8;       //其他命令
 
-
+    // 发送 GPS数据
+    public static final byte SEND_DATA_GPS = 0x50;       //发送GPS 数据
 
 }

@@ -12,13 +12,10 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.os.Build;
-import android.os.Handler;
-import android.os.Message;
+import android.os.*;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
@@ -26,11 +23,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.cycloneboy.udpdemo.utils.HexUtils;
 import com.cycloneboy.udpdemo.utils.LocationUtils;
 
 import java.lang.ref.WeakReference;
 
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -42,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
     Button  btn_Send,btn_UdpConn,btn_UdpClose;
     Button  btnForward,btnTurnLeft,btnTurnRight,btnStop,btnBackward;
     Button  btnTurnClockwise,btnTurnAntiClockwise,btnCalibrationDirection,btnOtherCmd; //旋转按钮
+
+    Button btnSendGps;
 
     EditText edit_Send,editTextIP,editTextPort;
     private UDPClient client = null;
@@ -58,6 +60,21 @@ public class MainActivity extends AppCompatActivity {
     private String locationProvider;
 
     private boolean flag; //GPS
+
+    //获取位置变化结果
+    public float gpsGaccuracy =0.0f;//精确度，以米为单位
+    public float gpsAltitude=0.0f ;//获取海拔高度
+    public float gpsLongitude=0.0f ;//经度
+    public float gpsLatitude=0.0f ;//纬度
+    public float gpsSpeed=0.0f ;//速度
+
+    // 定时发送GPS 数据
+
+   //private Handler handlerSendGps = new Handler();
+
+    private Timer timerSendGps = new Timer();
+
+    TimerTask taskSendGps ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,8 +94,27 @@ public class MainActivity extends AppCompatActivity {
         initLocation();     //初始化定位GPS相关
 
         SetControlButtonEnableState(false);//设置控制按钮状态
+
+        // 开始计时发送
+       // handlerSendGps.removeCallbacks(runnableSendGps);
+       // handlerSendGps.postDelayed(runnableSendGps,1000);
+
     }
 
+    // 发送 GPS 数据线程
+//    private Runnable runnableSendGps = new Runnable() {
+//        @Override
+//        public void run() {
+//            HexUtils.putFloat(sendCmdBuf,gpsLongitude,0);
+//            HexUtils.putFloat(sendCmdBuf,gpsLatitude,4);
+//            HexUtils.putFloat(sendCmdBuf,gpsSpeed,8);
+//
+//            Thread thread = thread = sendCmd(ConstParam.SEND_DATA_GPS,sendCmdBuf,12);
+//            thread.start();
+//            handlerSendGps.postDelayed(this,1000); //定时1000ms
+//            System.out.println("发送一包GPS 数据\r\n");
+//        }
+//    };
 
     private void bindWidget(){
         txt_Info = (TextView)findViewById(R.id.txt_Info);
@@ -102,6 +138,9 @@ public class MainActivity extends AppCompatActivity {
         btnCalibrationDirection = (Button)findViewById(R.id.btnCalibrationDirection);
         btnOtherCmd  = (Button)findViewById(R.id.btnOtherCmd);
 
+        // 2017-12-30 22:32 添加发送GPS按钮
+        btnSendGps =(Button)findViewById(R.id.btn_SendGps);
+
     }
 
     private void bindListening(){
@@ -120,6 +159,10 @@ public class MainActivity extends AppCompatActivity {
         btnTurnAntiClockwise.setOnClickListener(myBtnClick);
         btnCalibrationDirection.setOnClickListener(myBtnClick);
         btnOtherCmd.setOnClickListener(myBtnClick);
+
+        // 2017-12-30 22:32 添加发送GPS按钮
+        btnSendGps.setOnClickListener(myBtnClick);
+
     }
 
     private void bindReceiver(){
@@ -167,11 +210,18 @@ public class MainActivity extends AppCompatActivity {
      */
     private void showLocation(Location location){
         //获取位置变化结果
-        float accuracy = location.getAccuracy();//精确度，以密为单位
+        float accuracy = location.getAccuracy();//精确度，以米为单位
         double altitude = location.getAltitude();//获取海拔高度
         double longitude = location.getLongitude();//经度
         double latitude = location.getLatitude();//纬度
         float speed = location.getSpeed();//速度
+
+        // 获取GPS 信息 全局变量
+        gpsGaccuracy = accuracy;
+        gpsAltitude =(float) altitude;
+        gpsLongitude = (float) longitude;
+        gpsLatitude = (float) latitude;
+        gpsSpeed = speed;
 
         //显示位置信息
         StringBuffer sb= new StringBuffer();
@@ -255,6 +305,14 @@ public class MainActivity extends AppCompatActivity {
             //移除监听器
             locationManager.removeUpdates(locationListener);
         }
+        if (timerSendGps != null) {
+
+            timerSendGps.cancel( );
+
+            timerSendGps = null;
+
+        }
+
     }
 
         // 获取本机IP
@@ -320,6 +378,35 @@ public class MainActivity extends AppCompatActivity {
                     editTextIP.setEnabled(false);
                     editTextPort.setEnabled(false);
                     SetControlButtonEnableState(true);//设置控制按钮状态
+
+                    // 开启定时发送GPS 任务
+                    if(taskSendGps !=null){
+                        taskSendGps.cancel();
+                    }
+                    timerSendGps.purge();
+
+                        taskSendGps = new TimerTask( ) {
+
+                            public void run ( ) {
+                                HexUtils.putFloat(sendCmdBuf,gpsLongitude,4);
+                                HexUtils.putFloat(sendCmdBuf,gpsLatitude,8);
+                                HexUtils.putFloat(sendCmdBuf,gpsSpeed,12);
+
+                                String str = String.format("gps src %f %f %f \r\n",gpsLongitude,gpsLatitude,gpsSpeed);
+                                Log.i(UdpTag,str);
+
+                                float lngj =  HexUtils.getFloat(sendCmdBuf,4);
+                                float latw =  HexUtils.getFloat(sendCmdBuf,8);
+                                float speed =  HexUtils.getFloat(sendCmdBuf,12);
+                                String strShow = String.format("gps des %f %f %f ",lngj,latw,speed);
+                                Log.i(UdpTag,strShow);
+                                Thread thread = sendCmd(ConstParam.SEND_DATA_GPS,sendCmdBuf,12);
+                                thread.start();
+                                System.out.println("发送一包GPS 数据\r\n");
+                            }
+                        };
+                    // 开启定时发送任务
+                    timerSendGps.schedule(taskSendGps,10000,1000);
                     break;
                 case R.id.btn_udpClose:
                     System.out.println(" btn_udpClose click once");
@@ -331,6 +418,11 @@ public class MainActivity extends AppCompatActivity {
                     editTextPort.setEnabled(true);
 
                     SetControlButtonEnableState(false);//设置控制按钮状态
+                    // 关闭定时发送任务
+                    if(taskSendGps !=null){
+                        taskSendGps.cancel();
+                    }
+                    timerSendGps.purge();
                     break;
                 case R.id.btn_Send:
                     System.out.println(" btn_Send click once");
@@ -432,7 +524,25 @@ public class MainActivity extends AppCompatActivity {
                     thread.start();
                     break;
                 }
+                case R.id.btn_SendGps:{
 
+                    HexUtils.putFloat(sendCmdBuf,gpsLongitude,4);
+                    HexUtils.putFloat(sendCmdBuf,gpsLatitude,8);
+                    HexUtils.putFloat(sendCmdBuf,gpsSpeed,12);
+
+                    String str = String.format("gps src %f %f %f \r\n",gpsLongitude,gpsLatitude,gpsSpeed);
+                    Log.i(UdpTag,str);
+
+                   float lngj =  HexUtils.getFloat(sendCmdBuf,4);
+                   float latw =  HexUtils.getFloat(sendCmdBuf,8);
+                   float speed =  HexUtils.getFloat(sendCmdBuf,12);
+                    String strShow = String.format("gps des %f %f %f ",lngj,latw,speed);
+                    Log.i(UdpTag,strShow);
+                    thread = sendCmd(ConstParam.SEND_DATA_GPS,sendCmdBuf,12);
+                    thread.start();
+                    System.out.println("发送一包GPS 数据\r\n");
+                    break;
+                }
                 default:
                     break;
             }
