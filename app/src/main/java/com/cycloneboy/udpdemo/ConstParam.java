@@ -9,6 +9,8 @@ public  class ConstParam {
     public static final int MSG_TYPE_SHOW_RCV = 1;
     public static final int MSG_TYPE_SEND = 2;
     public static final int MSG_TYPE_SHOW = 3;
+    public static final int MSG_TYPE_SHOW_RCV_ROBOT_DATA = 4;
+
 
     // 发送的控制命令ID
     public static final byte SEND_CMD_TURN_STOP = 0;       // 停止
@@ -22,6 +24,14 @@ public  class ConstParam {
     public static final byte SEND_CMD_OTHER_CMD = 8;       //其他命令
 
     // 发送 GPS数据
-    public static final byte SEND_DATA_GPS = 0x50;       //发送GPS 数据
+    public static final byte SEND_DATA_GPS =  (byte)0x50;        //发送GPS 数据
+    public static final byte SEND_DATA_SET_COURSE =  (byte)0x30;        //发送设定航向数据
+    public static final byte SEND_DATA_STOP_COURSE =  (byte)0x31;        //发送停止航向数据
+    public static final byte SEND_DATA_SET_ROBOT_SPEED =  (byte)0x32;        //发送设定速度 数据
+
+
+    // 接收数据命令ID
+    public static final byte RECEIVE_ROBOT_DATA = (byte) 0x80;       //接收STM32F407 ROBOT data
+
 
 }

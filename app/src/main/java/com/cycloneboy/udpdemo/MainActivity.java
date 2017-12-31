@@ -46,6 +46,11 @@ public class MainActivity extends AppCompatActivity {
     Button btnSendGps;
 
     EditText edit_Send,editTextIP,editTextPort;
+
+    EditText editSetCourse,editSetCourseP,editSetCourseI,editSetCourseD,editSetRobotSpeed;
+    Button btnSendSetCourse,btnSendStopCourse,btnSendSetRobotSpeed;
+
+
     private UDPClient client = null;
     public static Context context;
     private final MyHandler myHandler = new MyHandler(this);
@@ -67,6 +72,10 @@ public class MainActivity extends AppCompatActivity {
     public float gpsLongitude=0.0f ;//经度
     public float gpsLatitude=0.0f ;//纬度
     public float gpsSpeed=0.0f ;//速度
+
+    //ROBOT 数据
+    private float[] fRobotData = new float[10]; //ROBOT DATA
+    private TextView robotView;
 
     // 定时发送GPS 数据
 
@@ -95,26 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
         SetControlButtonEnableState(false);//设置控制按钮状态
 
-        // 开始计时发送
-       // handlerSendGps.removeCallbacks(runnableSendGps);
-       // handlerSendGps.postDelayed(runnableSendGps,1000);
-
     }
-
-    // 发送 GPS 数据线程
-//    private Runnable runnableSendGps = new Runnable() {
-//        @Override
-//        public void run() {
-//            HexUtils.putFloat(sendCmdBuf,gpsLongitude,0);
-//            HexUtils.putFloat(sendCmdBuf,gpsLatitude,4);
-//            HexUtils.putFloat(sendCmdBuf,gpsSpeed,8);
-//
-//            Thread thread = thread = sendCmd(ConstParam.SEND_DATA_GPS,sendCmdBuf,12);
-//            thread.start();
-//            handlerSendGps.postDelayed(this,1000); //定时1000ms
-//            System.out.println("发送一包GPS 数据\r\n");
-//        }
-//    };
 
     private void bindWidget(){
         txt_Info = (TextView)findViewById(R.id.txt_Info);
@@ -141,6 +131,19 @@ public class MainActivity extends AppCompatActivity {
         // 2017-12-30 22:32 添加发送GPS按钮
         btnSendGps =(Button)findViewById(R.id.btn_SendGps);
 
+        robotView = (TextView)findViewById(R.id.robotView);
+
+        // 2017-12-31 19:53 添加发送航向保持
+        editSetCourse= (EditText)findViewById(R.id.edit_setCourse);
+        editSetCourseP = (EditText)findViewById(R.id.edit_setCourseP);
+        editSetCourseI = (EditText)findViewById(R.id.edit_setCourseI);
+        editSetCourseD = (EditText)findViewById(R.id.edit_setCourseD);
+        editSetRobotSpeed = (EditText)findViewById(R.id.edit_setMotorSpeed);
+
+       btnSendSetCourse = (Button)findViewById(R.id.btn_SendSetCourse);
+       btnSendStopCourse = (Button)findViewById(R.id.btn_SendStopCourse);
+       btnSendSetRobotSpeed =(Button)findViewById(R.id.btn_SendSetMotorSpeed);
+
     }
 
     private void bindListening(){
@@ -163,6 +166,10 @@ public class MainActivity extends AppCompatActivity {
         // 2017-12-30 22:32 添加发送GPS按钮
         btnSendGps.setOnClickListener(myBtnClick);
 
+        // 2017-12-31 19:53 添加发送航向保持
+        btnSendSetCourse.setOnClickListener(myBtnClick);
+        btnSendSetRobotSpeed.setOnClickListener(myBtnClick);
+        btnSendStopCourse.setOnClickListener(myBtnClick);
     }
 
     private void bindReceiver(){
@@ -232,8 +239,7 @@ public class MainActivity extends AppCompatActivity {
         sb.append("speed:"+speed+" ");
 
 
-        String locationStr = "维度：" + location.getLatitude() +"\n"
-                + "经度：" + location.getLongitude();
+        String locationStr = "GPS坐标：经度：" + location.getLongitude() + "纬度：" + location.getLatitude();
         postionView.setText(locationStr);
         System.out.println(locationStr + sb.toString());
     }
@@ -279,9 +285,13 @@ public class MainActivity extends AppCompatActivity {
             super.handleMessage(msg);
             switch (msg.what){
                 case ConstParam.MSG_TYPE_SHOW_RCV:
+                    String recvStr = msg.obj.toString();
+
                     udpRcvStrBuf.append(msg.obj.toString());
-                    strTemp = "接收到：" + msg.obj.toString();
+                    strTemp = "接收到数据：" + msg.obj.toString();
                     txt_Info.setText(strTemp);
+                    //Log.i(UdpTag,"receive : " + recvCmdStr);
+
                     break;
                 case ConstParam.MSG_TYPE_SEND:
                     udpSendStrBuf.append(msg.obj.toString());
@@ -289,10 +299,15 @@ public class MainActivity extends AppCompatActivity {
                     txt_Info.setText(strTemp);
                     //txt_Info.setText(udpSendStrBuf.toString());
                     break;
-                case 3:
-                    strTemp = "接收到：" + msg.obj.toString();
-                    txt_Info.setText(strTemp);
-                    //txt_Info.setText(udpRcvStrBuf.toString());
+                case ConstParam.MSG_TYPE_SHOW_RCV_ROBOT_DATA:
+                    // fMotorAMileage，fMotorBMileage,yaw ，Speed，Speed_MotorB，
+                    // pitch,roll,temperature，Cylinder_Number_MotorA，Cylinder_Number_MotorB
+                    String strRobot = String.format("robot data : %.3f \t %.3f \t | %.2f \t %.2f \t %.2f\n | " +
+                                    "%.2f \t " + "%.2f \t | %.2f \t " + "%.2f \t | " + "%.2f\r\n" ,
+                            fRobotData[0],fRobotData[1], fRobotData[2], fRobotData[5],fRobotData[6],
+                            fRobotData[3], fRobotData[4],  fRobotData[8], fRobotData[9], fRobotData[7] );
+                    robotView.setText(strRobot);
+                    System.out.println("显示robot data : " + strRobot);
                     break;
             }
         }
@@ -339,6 +354,15 @@ public class MainActivity extends AppCompatActivity {
                 Log.i("主界面Broadcast","收到"+message.obj.toString());
                 myHandler.sendMessage(message);
             }
+            if (intent.hasExtra("udpRobotReceiveData"))  {
+                fRobotData =  intent.getFloatArrayExtra("udpRobotReceiveData");
+                Message message = new Message();
+                //message.obj = fRobotData;
+                message.what = ConstParam.MSG_TYPE_SHOW_RCV_ROBOT_DATA;
+                Log.i("主界面Broadcast","收到 robot data");
+                myHandler.sendMessage(message);
+            }
+
         }
     };
 
@@ -526,16 +550,16 @@ public class MainActivity extends AppCompatActivity {
                 }
                 case R.id.btn_SendGps:{
 
-                    HexUtils.putFloat(sendCmdBuf,gpsLongitude,4);
-                    HexUtils.putFloat(sendCmdBuf,gpsLatitude,8);
-                    HexUtils.putFloat(sendCmdBuf,gpsSpeed,12);
+                    HexUtils.putFloat(sendCmdBuf,gpsLongitude,0);
+                    HexUtils.putFloat(sendCmdBuf,gpsLatitude,4);
+                    HexUtils.putFloat(sendCmdBuf,gpsSpeed,8);
 
                     String str = String.format("gps src %f %f %f \r\n",gpsLongitude,gpsLatitude,gpsSpeed);
                     Log.i(UdpTag,str);
 
-                   float lngj =  HexUtils.getFloat(sendCmdBuf,4);
-                   float latw =  HexUtils.getFloat(sendCmdBuf,8);
-                   float speed =  HexUtils.getFloat(sendCmdBuf,12);
+                   float lngj =  HexUtils.getFloat(sendCmdBuf,0);
+                   float latw =  HexUtils.getFloat(sendCmdBuf,4);
+                   float speed =  HexUtils.getFloat(sendCmdBuf,8);
                     String strShow = String.format("gps des %f %f %f ",lngj,latw,speed);
                     Log.i(UdpTag,strShow);
                     thread = sendCmd(ConstParam.SEND_DATA_GPS,sendCmdBuf,12);
@@ -543,6 +567,43 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println("发送一包GPS 数据\r\n");
                     break;
                 }
+                case R.id.btn_SendSetCourse :{
+                    float fSetCourse = Float.parseFloat( editSetCourse.getText().toString().trim());
+                    float fSetCourseP = Float.parseFloat( editSetCourseP.getText().toString().trim());
+                    float fSetCourseI = Float.parseFloat( editSetCourseI.getText().toString().trim());
+                    float fSetCourseD = Float.parseFloat( editSetCourseD.getText().toString().trim());
+
+                    HexUtils.putFloat(sendCmdBuf,fSetCourse,0);
+                    HexUtils.putFloat(sendCmdBuf,fSetCourseP,4);
+                    HexUtils.putFloat(sendCmdBuf,fSetCourseI,8);
+                    HexUtils.putFloat(sendCmdBuf,fSetCourseD,12);
+                    String str = String.format("set course  %f %f %f %f\r\n",fSetCourse,fSetCourseP,fSetCourseI,fSetCourseD);
+                    Log.i(UdpTag,str);
+                    System.out.println("设置航向\r\n");
+                    thread = sendCmd(ConstParam.SEND_DATA_SET_COURSE,sendCmdBuf,16);
+                    thread.start();
+
+                    break;
+                }
+
+                case R.id.btn_SendStopCourse:{
+                    sendCmdBuf[0] = 1;
+                    thread = sendCmd(ConstParam.SEND_DATA_STOP_COURSE,sendCmdBuf,1);
+                    thread.start();
+                    break;
+                }
+
+                case R.id.btn_SendSetMotorSpeed:{
+                    int SetSpeed = Integer.parseInt(editSetRobotSpeed.getText().toString().trim());
+
+                    sendCmdBuf[0] = (byte) (SetSpeed/256);
+                    sendCmdBuf[1] = (byte) (SetSpeed%256);
+                    System.out.println("设置航速\r\n");
+                    thread = sendCmd(ConstParam.SEND_DATA_SET_ROBOT_SPEED,sendCmdBuf,2);
+                    thread.start();
+                    break;
+                }
+
                 default:
                     break;
             }
@@ -571,8 +632,11 @@ public class MainActivity extends AppCompatActivity {
                 cmd[5+ cmdContentLength] = (byte) 0xc8;
 
                 client.send(cmd,cmd[3] + 6);
-                message.obj = new String(" 发送控制命令：" + cmdId);
-                myHandler.sendMessage(message);
+                if( cmdId != ConstParam.SEND_DATA_GPS){ //不显示发送的GPS命令
+                    message.obj = new String(" 发送控制命令：" + cmdId);
+                    myHandler.sendMessage(message);
+                }
+
 
             }
         });

@@ -18,4 +18,7 @@
     <string name="strTurnAntiClockwise">逆时针</string>
     <string name="strCalibrationDirection">校准</string>
     <string name="strOtherCmd">其他</string>
+
+    <!-- 添加 发送GPS按钮 和显示ROBOT数据  2017-12-31 -->
+    <string name="strRobot">机器人</string>
 </resources>

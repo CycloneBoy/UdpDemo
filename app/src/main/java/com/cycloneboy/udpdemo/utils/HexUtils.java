@@ -206,12 +206,61 @@ final public class HexUtils {
     }
 
     public static void main(String[] args) {
-        String hex = "ef2c71b29202f3e642f2abd8d518f367ec3fbf6a6a61beb678ae0c871ee368ac";
-        System.out.println(HexUtils.hexStr2Str(hex));
-        byte[] temp = HexUtils.hexStr2Bytes(hex);
-        for (int i = 0; i < temp.length; i++) {
-            byte b = temp[i];
-            System.out.print(b + " ");
+//        String hex = "ef2c71b29202f3e642f2abd8d518f367ec3fbf6a6a61beb678ae0c871ee368ac";
+//        System.out.println(HexUtils.hexStr2Str(hex));
+//        byte[] temp = HexUtils.hexStr2Bytes(hex);
+//        for (int i = 0; i < temp.length; i++) {
+//            byte b = temp[i];
+//            System.out.print(b + " ");
+//        }
+
+        byte[] cmd = new byte[7];
+        cmd[0] =(byte)  0xa5;
+        cmd[1] =(byte)  0xa5;
+        cmd[2] =(byte)  0x20;
+        cmd[3] =(byte)  0x01;
+        cmd[4] =(byte)  0x55;
+        cmd[5] =(byte)  0xc8;
+        cmd[6] =(byte)  0xc8;
+
+        String str = HexUtils.byte2HexStr(cmd);
+        System.out.println(str);
+
+        float[] fReceiveData = new float[10];//udp 接收数据处理
+        byte[] RcvMsgByte  = new byte[1024]; //接收消息
+
+        //A5A55028 575F8242 A61E8F49 195F9341 00005043 000060C3 0F17BCBE 7F16153F 4907A800 179D9F43 5438AF4A C8C8
+        RcvMsgByte[0] =(byte)0xa5;
+        RcvMsgByte[1] =(byte)0xa5;
+
+        RcvMsgByte[2] =(byte)0x50;
+        RcvMsgByte[3] =(byte)0x28;
+
+        RcvMsgByte[4] =(byte)0x57;
+        RcvMsgByte[5] =(byte)0x5F;
+        RcvMsgByte[6] =(byte)0x82;
+        RcvMsgByte[7] =(byte)0x42;
+
+        RcvMsgByte[8] =(byte)0xA6;
+        RcvMsgByte[9] =(byte)0x1E;
+        RcvMsgByte[10] =(byte)0x8F;
+        RcvMsgByte[11] =(byte)0x49;
+
+        RcvMsgByte[12] =(byte)0x19;
+        RcvMsgByte[13] =(byte)0x5F;
+        RcvMsgByte[14] =(byte)0x93;
+        RcvMsgByte[15] =(byte)0x41;
+
+        RcvMsgByte[16] =(byte)0xc8;
+        RcvMsgByte[17] =(byte)0xc8;
+
+        for(int i= 0; i < 3;i++){
+            fReceiveData[i] = HexUtils.getFloat(RcvMsgByte,4+ 4*i);
+            System.out.println(fReceiveData[i] );
         }
+
+
+        //A5A550287A3398424D1E8F495A4496410000000000000000A8D185BE6A1B753E4D07A8009756BA43E737AF4AC8C8
+
     }
 }
