@@ -12,6 +12,8 @@
 
     <string name="strGPS">GPS坐标：</string>
     <string name="menuDesignAuthor">Design by CycloneBoy</string>
+    <string name="action_video_settings">视频显示</string>
+
 
     <!-- 添加 顺时针、逆时针功能按钮 2017-12-11 -->
     <string name="strTurnClockwise">顺时针</string>
@@ -21,4 +23,8 @@
 
     <!-- 添加 发送GPS按钮 和显示ROBOT数据  2017-12-31 -->
     <string name="strRobot">机器人</string>
+
+    <string name="title_activity_video_show">实时视频监控</string>
+    <string name="dummy_button">测试按钮</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
 </resources>
